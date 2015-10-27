@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+	<head>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
+		<link rel="stylesheet" href="index.css">
+	</head>
+
+	<body>
+		<div id="input-wrap">
+			<textarea autocomplete="off" placeholder="Write markdown here" type=text name=textfield class="t" autofocus></textarea>
+		</div>
+
+		<div contenteditable="true" id="output-wrap">
+			<p id="output"></p>
+		</div>
+
+		<script type="text/javascript">
+               $(document).ready(function () {
+                	setInterval("update()", 100);
+               });
+
+                function update(){
+					var text = $(".t").val();
+					$.post("http://localhost:3000/preview", {textfield: text}, function(data){
+					$("#output").empty();
+					$("#output").html(data);
+					});
+               }
+             </script>
+	</body>
+
+</html>
