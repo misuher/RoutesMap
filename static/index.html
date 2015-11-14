@@ -11,7 +11,11 @@
 
 	<body>
 		<aside id="sidebar">
-
+			<form action="http://localhost.com:8080/receive" method="post" enctype="multipart/form-data">
+				<label for="file">Filename:</label>
+				<input type="file" name="file" id="file">
+				<input type="submit" name="submit" value="Submit">
+			</form>
 		</aside>
 		<div id="map-wrap">
 			<div id="map-canvas"></div>
@@ -19,6 +23,7 @@
 
 		<script type="text/javascript">
 				var map;
+				var marker;
 				var styleArray = [
 				    {
 				      featureType: "all",
@@ -44,12 +49,50 @@
 				function initMap() {
 					$('#map-canvas').height($(window).height());
 				  // Create a map object and specify the DOM element for display.
-				  var map = new google.maps.Map(document.getElementById('map-canvas'), {
+				  map = new google.maps.Map(document.getElementById('map-canvas'), {
 				    center: {lat: 28.6034, lng: -15.6982},
 				    scrollwheel: false,
 				    zoom: 8,
 					styles: styleArray
 				  });
+
+					var path1Coor = [
+						{lat: 27.926075, lng: -15.390818},
+						{lat: 28.040288, lng: -16.572979}
+					];
+
+					var path1 = new google.maps.Polyline({
+						path: path1Coor,
+						geodesic: true,
+						strokeColor: '#FF0000',
+						strokeOpacity: 1.0,
+						strokeWeight: 2
+					});
+
+					var GRUpos = {lat: 27.926075, lng: -15.390818};
+					marker = new google.maps.Marker({
+					    position: GRUpos,
+					    map: map,
+					    title: 'GRU',
+						draggable: false,
+						label: 'GRU',
+						animation: google.maps.Animation.DROP
+					  });
+
+					path1.setMap(map);
+				}
+
+
+
+				// every 10 seconds
+				setInterval(updateMarker,10000);
+
+				function updateMarker() {
+					marker.setPosition({lat: 28.040288, lng: -16.572979});
+				/*$.post('/path/to/server/getPosition',{}, function(json) {
+				      var LatLng = new google.maps.LatLng(json.latitude, json.longitude);
+				      marker.setPosition(LatLng);
+				});*/
 				}
         </script>
 		<script async defer
