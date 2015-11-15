@@ -1,7 +1,14 @@
 
 		var map;
-		var marker;
-		
+		var GRUmarker;
+		var GRPmarker;
+		var GQFmarker;
+		var LZRmarker;
+		var GRUpos;
+		var GRPpos;
+		var LZRpos;
+		var GQFpos;
+
 		var styleArray = [
 			{
 			featureType: "all",
@@ -24,51 +31,132 @@
 			}
 		];
 
+
 		function initMap() {
 			$('#map-canvas').height($(window).height());
-		// Create a map object and specify the DOM element for display.
-		map = new google.maps.Map(document.getElementById('map-canvas'), {
-			center: {lat: 28.6034, lng: -15.6982},
-			scrollwheel: false,
-			zoom: 8,
-			styles: styleArray
-		});
+			// Create a map object and specify the DOM element for display.
+			map = new google.maps.Map(document.getElementById('map-canvas'), {
+				center: {lat: 27.6034, lng: -15.6982},
+				//center: {lat: 26.6475, lng: -16.1693},
+				scrollwheel: false,
+				zoom: 8,
+				styles: styleArray
+			});
 
-			var path1Coor = [
-				{lat: 27.926075, lng: -15.390818},
-				{lat: 28.040288, lng: -16.572979}
-			];
+			var LPA = {lat: 27.926075, lng: -15.390818};
+			var TFN = {lat: 28.040288, lng: -16.572979};
+			var ACE = {lat: 28.946344, lng: -13.607218};  //ACE-lanzarote
+			var EUN = {lat: 27.142294, lng: -13.225541};  //EUN
+			var SPC = {lat: 28.622109, lng: -17.755491};  //SPC - La palma
+			var DAC = {lat: 23.717010, lng: -15.933434}; //Dakhla
 
-			var path1 = new google.maps.Polyline({
-				path: path1Coor,
+			var LPATFN = [LPA , TFN];
+			var LPAACE = [LPA, ACE];
+			var LPAEUN = [LPA, EUN];
+			var TFNSPC = [TFN, SPC];
+			var LPADAC = [LPA, DAC];
+
+			var lineLPATFN = new google.maps.Polyline({
+				path: LPATFN,
 				geodesic: true,
 				strokeColor: '#FF0000',
-				strokeOpacity: 1.0,
+				strokeOpacity: 0.3,
 				strokeWeight: 2
 			});
 
-			var GRUpos = {lat: 27.926075, lng: -15.390818};
-			marker = new google.maps.Marker({
-				position: GRUpos,
+			var lineLPAACE = new google.maps.Polyline({
+				path: LPAACE,
+				geodesic: true,
+				strokeColor: '#FF0000',
+				strokeOpacity: 0.3,
+				strokeWeight: 2
+			});
+
+			var lineLPAEUN = new google.maps.Polyline({
+				path: LPAEUN,
+				geodesic: true,
+				strokeColor: '#FF0000',
+				strokeOpacity: 0.3,
+				strokeWeight: 2
+			});
+
+			var lineTFNSPC = new google.maps.Polyline({
+				path: TFNSPC,
+				geodesic: true,
+				strokeColor: '#FF0000',
+				strokeOpacity: 0.3,
+				strokeWeight: 2
+			});
+
+			var lineLPADAC = new google.maps.Polyline({
+				path: LPADAC,
+				geodesic: true,
+				strokeColor: '#FF0000',
+				strokeOpacity: 0.3,
+				strokeWeight: 2
+			});
+
+			lineLPATFN.setMap(map);
+			lineLPAACE.setMap(map);
+			lineLPAEUN.setMap(map);
+			lineTFNSPC.setMap(map);
+			lineLPADAC.setMap(map);
+
+			GRUmarker = new google.maps.Marker({
+				position: LPA,
 				map: map,
 				title: 'GRU',
 				draggable: false,
-				label: 'GRU',
+				label: 'U',
 				animation: google.maps.Animation.DROP
 			});
 
-			path1.setMap(map);
+			GRPmarker = new google.maps.Marker({
+				position: TFN,
+				map: map,
+				title: 'GRP',
+				draggable: false,
+				label: 'P',
+				animation: google.maps.Animation.DROP
+			});
+
+			GQFmarker = new google.maps.Marker({
+				position: SPC,
+				map: map,
+				title: 'GQF',
+				draggable: false,
+				label: 'F',
+				animation: google.maps.Animation.DROP
+			});
+
+			LZRmarker = new google.maps.Marker({
+				position: DAC,
+				map: map,
+				title: 'LZR',
+				draggable: false,
+				label: 'R',
+				animation: google.maps.Animation.DROP
+			});
+
+			updateMarker();
+
 		}
 
 
+	setInterval(updateMarker,10000);
 
-		// every 10 seconds
-		setInterval(updateMarker,10000);
+	function updateMarker() {
+		$.post("http://localhost:4000/getCoords", {}, function(json){
+			var pos = JSON.parse(json);
+			var LatLng = new google.maps.LatLng(pos.Pos[0].Lat, pos.Pos[0].Lng);
+			GRUmarker.setPosition(LatLng);
+			GRPmarker.setPosition(LatLng);
+			GQFmarker.setPosition(LatLng);
+			LZRmarker.setPosition({lat: 28.040288, lng: -16.572979});
+		});
 
-		function updateMarker() {
-			marker.setPosition({lat: 28.040288, lng: -16.572979});
-		/*$.post('/path/to/server/getPosition',{}, function(json) {
-			var LatLng = new google.maps.LatLng(json.latitude, json.longitude);
-			marker.setPosition(LatLng);
-		});*/
-		}
+	/*$.post('/path/to/server/getPosition',{}, function(json) {
+		var LatLng = new google.maps.LatLng(json.latitude, json.longitude);
+		marker.setPosition(LatLng);
+	});*/
+	}

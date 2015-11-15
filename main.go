@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -9,13 +10,13 @@ import (
 func main() {
 	http.Handle("/", http.FileServer(http.Dir("./static/"))) //working page
 	http.HandleFunc("/daily", daily)                         //upload pdf table url
-	//http.HandleFunc("/getCoords", getCoords)	//ajax request to get actual markers position
+	http.HandleFunc("/getCoords", getCoords)                 //ajax request to get actual markers position
 	http.ListenAndServe(":4000", nil)
 }
 
 func daily(w http.ResponseWriter, r *http.Request) {
 	file, handler, err := r.FormFile("file")
-	fmt.Print(handler.Filename)
+	fmt.Println(handler.Filename)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -30,14 +31,31 @@ func daily(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// func getCoords(w http.ResponseWriter, r *http.Request) {
-// 	if r.Method != "POST" {
-// 		http.NotFound(w, r)
-// 		return
-// 	}
-//
-// 	field := r.FormValue("textfield")
-// 	mark := markdown.NewParser(strings.NewReader(field))
-// 	log.Println("Ajax:", field)
-// 	w.Write([]byte(mark.Markdown()))
-// }
+func getCoords(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		//http.NotFound(w, r)
+		//return
+	}
+
+	GRU := Positions{[]Position{{27.926075, -15.390818},
+		{27.926075, -15.390818},
+		{27.926075, -15.390818},
+		{27.926075, -15.390818}}}
+
+	js, err := json.Marshal(GRU)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
+}
+
+type Position struct {
+	Lat float32
+	Lng float32
+}
+
+type Positions struct {
+	Pos []Position
+}
