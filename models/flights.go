@@ -26,7 +26,7 @@ type Flights struct {
 //Create initialize a table in the db with Flights
 func (db *DB) Create() {
 	sqlStmt := `
-	CREATE TABLE IF NOT EXISTS Daily (
+	CREATE TABLE IF NOT EXISTS daily (
 		id integer not null PRIMARY KEY,
 		date DATE NOT NULL,
 		avion VARCHAR(255) NOT NULL,
@@ -46,4 +46,46 @@ func (db *DB) Create() {
 		log.Printf("%q: %s\n", err, sqlStmt)
 		return
 	}
+}
+
+func (db *DB) getDaily(date time.Time) ([]*Flight, error) {
+	err := db.Ping()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := db.Query("SELECT * FROM daily WHERE date = ? ORDER BY id DESC", date)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var flights []*Flight
+	for rows.Next() {
+		flight := new(Flight)
+		err := rows.Scan(&flight.Avion, &flight.Vuelo, &flight.DepPlace, &flight.DepTime, &flight.ArrPlace, &flight.ArrTime, &flight.Pasajeros, &flight.Capitan, &flight.PrimerOficial)
+		if err != nil {
+			return nil, err
+		}
+		log.Printf("Vuelo creado: %s %s  %s  %s  %s  %s  %s  %s  %s\n", flight.Avion, flight.Vuelo, flight.DepPlace, flight.DepTime, flight.ArrPlace, flight.ArrTime, flight.Pasajeros, flight.Capitan, flight.PrimerOficial)
+		flights = append(flights, flight)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return flights, nil
+}
+
+func (db *DB) setDaily(date time.Time, flight Flight) error {
+	result, err := db.Exec("INSERT INTO daily VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", date, flight.Avion, flight.Vuelo, flight.DepPlace, flight.DepTime, flight.ArrPlace, flight.ArrTime, flight.Pasajeros, flight.Capitan, flight.PrimerOficial)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	log.Printf("Vuelo %s creado (%d row cambiado)\n", flight.Vuelo, rowsAffected)
+	return nil
 }

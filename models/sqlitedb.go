@@ -11,8 +11,8 @@ import (
 //Datastore defines personaliced querys for the models
 type Datastore interface {
 	Create()
-	getDaily(date time.Time) (*Flights, error)
-	setDaily(f *Flights) error
+	getDaily(date time.Time) ([]*Flight, error)
+	setDaily(date time.Time, flight Flight) error
 }
 
 //DB is a wrapper por a sql.DB
