@@ -1,13 +1,25 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"os/exec"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
+	//open database
+	db, err := sql.Open("sqlite3", "./foo.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
 	http.Handle("/", http.FileServer(http.Dir("./static/"))) //working page
 	http.HandleFunc("/daily", daily)                         //upload pdf table url
 	http.HandleFunc("/getCoords", getCoords)                 //ajax request to get actual markers position
@@ -33,8 +45,8 @@ func daily(w http.ResponseWriter, r *http.Request) {
 
 func getCoords(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		//http.NotFound(w, r)
-		//return
+		http.NotFound(w, r)
+		return
 	}
 
 	GRU := Positions{[]Position{{27.926075, -15.390818},
@@ -58,4 +70,14 @@ type Position struct {
 
 type Positions struct {
 	Pos []Position
+}
+
+func pdf2text() {
+	fileRoute := "./uploads/prueba.pdf"
+	body, err := exec.Command("pdftotext", "-q", "-nopgbrk", "-enc", "UTF-8", "-eol", "unix", fileRoute, "-").Output()
+	if err != nil {
+		log.Println("pdf2text:", err)
+	}
+	//TODO: pasear contenido de body y pasarlo a un struct y este a la db
+	fmt.Println(body)
 }
