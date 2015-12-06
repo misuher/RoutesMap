@@ -10,9 +10,9 @@ type Flight struct {
 	Avion         string
 	Vuelo         string
 	DepPlace      string
-	DepTime       time.Time
+	DepTime       string
 	ArrPlace      string
-	ArrTime       time.Time
+	ArrTime       string
 	Pasajeros     string
 	Capitan       string
 	PrimerOficial string
@@ -32,9 +32,9 @@ func (db *DB) Create() {
 		avion VARCHAR(255) NOT NULL,
 		vuelo VARCHAR(255) NOT NULL,
 		depplace VARCHAR(255) NOT NULL,
-		deptime TIME NOT NULL,
+		deptime VARCHAR(255) NOT NULL,
 		arrplace VARCHAR(255) NOT NULL,
-		arrtime TIME NOT NULL,
+		arrtime VARCHAR(255) NOT NULL,
 		pasajeros VARCHAR(255) NOT NULL,
 		capitan VARCHAR(255) NOT NULL,
 		fo VARCHAR(255) NOT NULL
@@ -52,11 +52,14 @@ func (db *DB) Create() {
 func (db *DB) GetDaily(date time.Time) ([]*Flight, error) {
 	err := db.Ping()
 	if err != nil {
+		log.Println("GetDaily error: db.Ping")
 		return nil, err
 	}
 
-	rows, err := db.Query("SELECT * FROM daily WHERE date = ? ORDER BY id DESC", date)
+	rows, err := db.Query("SELECT avion,vuelo,depplace,deptime,arrplace,arrtime,pasajeros,capitan,fo FROM daily WHERE date=? ORDER BY id ASC", date)
 	if err != nil {
+		log.Println("GetDaily error: db.Query")
+		log.Println(err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -66,12 +69,15 @@ func (db *DB) GetDaily(date time.Time) ([]*Flight, error) {
 		flight := new(Flight)
 		err := rows.Scan(&flight.Avion, &flight.Vuelo, &flight.DepPlace, &flight.DepTime, &flight.ArrPlace, &flight.ArrTime, &flight.Pasajeros, &flight.Capitan, &flight.PrimerOficial)
 		if err != nil {
+			log.Println("GetDaily error: rows.Scan")
+			log.Println(err)
 			return nil, err
 		}
-		log.Printf("Vuelo creado: %s %s  %s  %s  %s  %s  %s  %s  %s\n", flight.Avion, flight.Vuelo, flight.DepPlace, flight.DepTime, flight.ArrPlace, flight.ArrTime, flight.Pasajeros, flight.Capitan, flight.PrimerOficial)
+		log.Printf("Vuelo leido: %s %s  %s  %s  %s  %s  %s  %s  %s\n", flight.Avion, flight.Vuelo, flight.DepPlace, flight.DepTime, flight.ArrPlace, flight.ArrTime, flight.Pasajeros, flight.Capitan, flight.PrimerOficial)
 		flights = append(flights, flight)
 	}
 	if err = rows.Err(); err != nil {
+		log.Println("GetDaily error: rows.Error")
 		return nil, err
 	}
 	return flights, nil

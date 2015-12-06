@@ -11,7 +11,7 @@ import (
 )
 
 //ParsePDF parse an expecific format file from a pdf
-func ParsePDF(body []byte, env models.Datastore) error {
+func ParsePDF(date time.Time, body []byte, env models.Datastore) error {
 	buffer := bytes.NewReader(body)
 	scanner := bufio.NewScanner(buffer)
 
@@ -28,22 +28,13 @@ func ParsePDF(body []byte, env models.Datastore) error {
 			f.DepPlace = scanner.Text()
 			scanner.Scan()
 			scanner.Scan()
-			f.DepTime, err = time.Parse("15:04", scanner.Text())
-			if err != nil {
-				log.Println("ParsePDF error:time.Parse")
-				log.Println(err)
-				return err
-			}
+			f.DepTime = scanner.Text()
 			scanner.Scan()
 			scanner.Scan()
 			f.ArrPlace = scanner.Text()
 			scanner.Scan()
 			scanner.Scan()
-			f.ArrTime, err = time.Parse("15:04", scanner.Text())
-			if err != nil {
-				log.Println("ParsePDF error:time.Parse")
-				return err
-			}
+			f.ArrTime = scanner.Text()
 			scanner.Scan()
 			scanner.Scan()
 			f.Pasajeros = scanner.Text()
@@ -56,17 +47,19 @@ func ParsePDF(body []byte, env models.Datastore) error {
 
 			log.Printf("%v\n", f)
 
-			date, _ := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
 			err = env.SetDaily(date, f)
-
 			if err != nil {
 				log.Println("SetDaily error")
 				return err
 			}
 		}
 	}
-
 	if err := scanner.Err(); err != nil {
+		return err
+	}
+	err = env.SetParking(date)
+	if err != nil {
+		log.Println("SetParking error")
 		return err
 	}
 	return nil

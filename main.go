@@ -20,11 +20,7 @@ import (
 const STATIC_URL string = "/static/"
 const STATIC_ROOT string = "static/"
 
-type Prueba_t struct {
-	Prueba string
-}
-
-//Env wrpa a db interface with the methods to consult it.
+//Env warps a db interface with the methods to consult it.
 type Env struct {
 	db models.Datastore
 }
@@ -48,12 +44,34 @@ func main() {
 }
 
 func (env *Env) googleMap(w http.ResponseWriter, r *http.Request) {
-	p := &Prueba_t{Prueba: "probandooo"}
 	t, err := template.ParseFiles("./static/index.html")
 	if err != nil {
 		log.Println("template parsing error: ", err)
 	}
-	err = t.Execute(w, p)
+	/*
+		hour, _ := time.Parse(time.Kitchen, "11:09PM")
+		log.Println(hour)
+		parkings := []models.TimesInLPA{
+			{Aircraft: "GRU",
+				Times: []models.TimeInLPA{
+					{Arrival: hour, Leave: hour},
+					{Arrival: hour, Leave: hour},
+				}},
+			{Aircraft: "GRP",
+				Times: []models.TimeInLPA{
+					{Arrival: hour, Leave: hour},
+					{Arrival: hour, Leave: hour},
+				}},
+		}
+	*/
+	date, _ := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
+	parkings, err := env.db.GetParkings(date)
+	if err != nil {
+		log.Println("template data error: ", err)
+	}
+	log.Println(parkings)
+
+	err = t.Execute(w, parkings)
 	if err != nil {
 		log.Println("template executing error: ", err)
 	}
@@ -93,14 +111,27 @@ func (env *Env) dailyUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(400), 400)
 	}
 
-	err = env.pdf2text()
+	err = env.pdf2text(fileRoute.String())
 	if err != nil {
 		http.Error(w, http.StatusText(400), 400)
 	}
+	/*
+		t, err := template.ParseFiles("./static/index.html")
+		if err != nil {
+			log.Println("template parsing error: ", err)
+		}
+		date, _ := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
+		parkings, err := env.db.GetParkings(date)
+		if err != nil {
+			log.Println("template data error: ", err)
+		}
+		log.Println(parkings)
 
-	//for _, bk := range bks {
-	//	fmt.Fprintf(w, "%s %s  \n", bk.Isbn, bk.Title, bk.Author, bk.Price)
-	//}
+		err = t.Execute(w, parkings)
+		if err != nil {
+			log.Println("template executing error: ", err)
+		}
+	*/
 }
 
 func (env *Env) getCoords(w http.ResponseWriter, r *http.Request) {
@@ -125,20 +156,16 @@ func (env *Env) getCoords(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
-func (env *Env) pdf2text() error {
-	var fileRoute bytes.Buffer
-	fileRoute.WriteString("./uploads/")
-	fileRoute.WriteString(time.Now().Format("2006-01-02"))
-	fileRoute.WriteString(".pdf")
+func (env *Env) pdf2text(fileRoute string) error {
 	//convert pdf to text
-	body, err := exec.Command("pdftotext", "-q", "-nopgbrk", "-enc", "UTF-8", "-eol", "unix", fileRoute.String(), "-").Output()
+	body, err := exec.Command("pdftotext", "-q", "-nopgbrk", "-enc", "UTF-8", "-eol", "unix", fileRoute, "-").Output()
 	if err != nil {
 		log.Println("No hay daily de hoy")
 		return err
 	}
 	date, _ := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
 	err = env.db.DeleteDaily(date)
-	err = parser.ParsePDF(body, env.db)
+	err = parser.ParsePDF(date, body, env.db)
 	if err != nil {
 		return err
 	}

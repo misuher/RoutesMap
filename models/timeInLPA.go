@@ -7,15 +7,15 @@ import (
 )
 
 //timeInLPA defines the interval of time represented as 2 hours in which an aircraft is parked in LPA airport
-type timeInLPA struct {
-	arrival time.Time
-	leave   time.Time
+type TimeInLPA struct {
+	Arrival string
+	Leave   string
 }
 
 //TimesInLPA is a collection of timeInLPA just in case that the aircraft stops several intervals of time in one day
 type TimesInLPA struct {
-	aircraft string
-	times    []timeInLPA
+	Aircraft string
+	Times    []TimeInLPA
 }
 
 //CreateParking initialize a table in the db with Flights
@@ -37,6 +37,24 @@ func (db *DB) CreateParking() {
 	}
 }
 
+func (db *DB) GetParkings(date time.Time) ([]TimesInLPA, error) {
+	var result []TimesInLPA
+	err := db.Ping()
+	if err != nil {
+		return result, err
+	}
+
+	aircrafts := []string{"EC-GRU", "EC-GRP", "EC-GQF", "EC-LZR", "EC-LYZ"}
+	for _, val := range aircrafts {
+		r, err := db.GetParking(date, val)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, r)
+	}
+	return result, nil
+}
+
 //GetParking obtain parking times of one aircraft
 func (db *DB) GetParking(date time.Time, aircraft string) (TimesInLPA, error) {
 	var result TimesInLPA
@@ -45,41 +63,48 @@ func (db *DB) GetParking(date time.Time, aircraft string) (TimesInLPA, error) {
 		return result, err
 	}
 
-	rows, err := db.Query("SELECT * FROM parking WHERE date = ? AND aircraft = ? ORDER BY id DESC", date, aircraft)
+	rows, err := db.Query("SELECT arrive,leave FROM parking WHERE date = ? AND aircraft = ? ORDER BY id DESC", date, aircraft)
 	if err != nil {
 		return result, err
 	}
 	defer rows.Close()
 
-	var parkings []timeInLPA
+	var parkings []TimeInLPA
 	for rows.Next() {
-		parking := new(timeInLPA)
-		err := rows.Scan(&parking.arrival, &parking.leave)
+		parking := new(TimeInLPA)
+		err := rows.Scan(&parking.Arrival, &parking.Leave)
 		if err != nil {
 			return result, err
 		}
-		log.Printf("Parking leido: %s %s %s  %s\n", date, aircraft, parking.arrival, parking.leave)
+		log.Printf("Parking leido: %s %s %s  %s\n", date, aircraft, parking.Arrival, parking.Leave)
 		parkings = append(parkings, *parking)
 	}
 	if err = rows.Err(); err != nil {
 		return result, err
 	}
-	result.aircraft = aircraft
-	result.times = parkings
+	result.Aircraft = aircraft
+	result.Times = parkings
 	return result, nil
 }
 
-func (db *DB) setParking(date time.Time) error {
+//SetParking save times of aircrafts in LPA airport in the db
+func (db *DB) SetParking(date time.Time) error {
 	//filter which flights arrive or leave LPA
 	aircrafts, err := db.filterTimesInLPA(date)
 	if err != nil {
+		log.Println("SetParking error: db.filterTimesLPA")
 		return err
 	}
 
+	err = db.DeleteParking(date)
+	if err != nil {
+		log.Println("SetParking error: db.DeleteParking")
+		return err
+	}
 	//save result into db parking table
 	for _, aircraft := range aircrafts {
-		for _, time := range aircraft.times {
-			result, err := db.Exec("INSERT INTO parking (date, aircraft , arrive , leave) VALUES(?, ?, ?, ?)", date, aircraft.aircraft, time.arrival, time.leave)
+		for _, time := range aircraft.Times {
+			result, err := db.Exec("INSERT INTO parking (date, aircraft , arrive , leave) VALUES(?, ?, ?, ?)", date, aircraft.Aircraft, time.Arrival, time.Leave)
 			if err != nil {
 				log.Println("setParking error: db.Exec")
 				return err
@@ -89,61 +114,63 @@ func (db *DB) setParking(date time.Time) error {
 				log.Println("setParking error: RowsAffected")
 				return err
 			}
-			log.Printf("Parking %s creado (%d row cambiado)\n", aircraft.aircraft, rowsAffected)
+			log.Printf("Parking %s creado (%d row cambiado)\n", aircraft.Aircraft, rowsAffected)
 		}
 	}
 
 	return nil
 }
 
-func (db *DB) filterTimesInLPA(date time.Time) ([]*TimesInLPA, error) {
+func (db *DB) filterTimesInLPA(date time.Time) ([]TimesInLPA, error) {
+
 	//get all the daily flights
 	flights, err := db.GetDaily(date)
 	if err != nil {
+		log.Println("filterTimesInLPA error: db.GetDaily")
 		return nil, err
 	}
 
 	//filter flights based on aircraft and place
-	var GRU []time.Time
-	var GRP []time.Time
-	var GQF []time.Time
-	var LZR []time.Time
-	var LYZ []time.Time
+	var GRU []string
+	var GRP []string
+	var GQF []string
+	var LZR []string
+	var LYZ []string
 
 	for _, val := range flights {
 		switch val.Avion {
 		case "EC-GRU":
 			if val.ArrPlace == "LPA" {
 				GRU = append(GRU, val.ArrTime)
-			} else if val.DepPlace == "LPA" {
+			} else if val.DepPlace == "LPA" && len(GRU) != 0 {
 				GRU = append(GRU, val.DepTime)
 			}
 			break
 		case "EC-GRP":
 			if val.ArrPlace == "LPA" {
 				GRP = append(GRP, val.ArrTime)
-			} else if val.DepPlace == "LPA" {
+			} else if val.DepPlace == "LPA" && len(GRP) != 0 {
 				GRP = append(GRP, val.DepTime)
 			}
 			break
 		case "EC-GQF":
 			if val.ArrPlace == "LPA" {
 				GQF = append(GQF, val.ArrTime)
-			} else if val.DepPlace == "LPA" {
+			} else if val.DepPlace == "LPA" && len(GQF) != 0 {
 				GQF = append(GQF, val.DepTime)
 			}
 			break
 		case "EC-LZR":
 			if val.ArrPlace == "LPA" {
 				LZR = append(LZR, val.ArrTime)
-			} else if val.DepPlace == "LPA" {
+			} else if val.DepPlace == "LPA" && len(LZR) != 0 {
 				LZR = append(LZR, val.DepTime)
 			}
 			break
 		case "EC-LYZ":
 			if val.ArrPlace == "LPA" {
 				LYZ = append(LYZ, val.ArrTime)
-			} else if val.DepPlace == "LPA" {
+			} else if val.DepPlace == "LPA" && len(LYZ) != 0 {
 				LYZ = append(LYZ, val.DepTime)
 			}
 			break
@@ -151,32 +178,11 @@ func (db *DB) filterTimesInLPA(date time.Time) ([]*TimesInLPA, error) {
 	}
 
 	//order times
-	sort.Sort(sortTime(GRU))
-	sort.Sort(sortTime(GRP))
-	sort.Sort(sortTime(GQF))
-	sort.Sort(sortTime(LZR))
-	sort.Sort(sortTime(LYZ))
-	//check there is even number of times
-	err = isLenEven(GRU)
-	if err != nil {
-		return nil, err
-	}
-	err = isLenEven(GRP)
-	if err != nil {
-		return nil, err
-	}
-	err = isLenEven(GQF)
-	if err != nil {
-		return nil, err
-	}
-	err = isLenEven(LZR)
-	if err != nil {
-		return nil, err
-	}
-	err = isLenEven(LYZ)
-	if err != nil {
-		return nil, err
-	}
+	sort.Strings(GRU)
+	sort.Strings(GRP)
+	sort.Strings(GQF)
+	sort.Strings(LZR)
+	sort.Strings(LYZ)
 	//make every two times a"timeInLPA" object cheking that the arrival time is less than the departure time.
 	GRUtimes := createTimesObject(GRU)
 	GRPtimes := createTimesObject(GRP)
@@ -184,17 +190,45 @@ func (db *DB) filterTimesInLPA(date time.Time) ([]*TimesInLPA, error) {
 	LZRtimes := createTimesObject(LZR)
 	LYZtimes := createTimesObject(LYZ)
 	//create the final TimesInLPA objec
-	var result []*TimesInLPA
-	result[0].aircraft = "EC-GRU"
-	result[0].times = GRUtimes
-	result[1].aircraft = "EC-GRP"
-	result[1].times = GRPtimes
-	result[2].aircraft = "EC-GQF"
-	result[2].times = GQFtimes
-	result[3].aircraft = "EC-LZR"
-	result[3].times = LZRtimes
-	result[4].aircraft = "EC-LYZ"
-	result[4].times = LYZtimes
+	var result []TimesInLPA
+	var t TimesInLPA
+	t.Aircraft = "EC-GRU"
+	t.Times = GRUtimes
+	result = append(result, t)
+	t.Aircraft = "EC-GRP"
+	t.Times = GRPtimes
+	result = append(result, t)
+	t.Aircraft = "EC-GQF"
+	t.Times = GQFtimes
+	result = append(result, t)
+	t.Aircraft = "EC-LZR"
+	t.Times = LZRtimes
+	result = append(result, t)
+	t.Aircraft = "EC-LYZ"
+	t.Times = LYZtimes
+	result = append(result, t)
 
 	return result, nil
+}
+
+func (db *DB) DeleteParking(date time.Time) error {
+	err := db.Ping()
+	if err != nil {
+		log.Println("DeleteParking error: db.Ping")
+		return err
+	}
+
+	result, err := db.Exec("DELETE FROM parking WHERE date=?", date)
+	if err != nil {
+		log.Println("DeleteParking error: db.Exec")
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Println("DeleteParking error: RowsAffected")
+		return err
+	}
+	log.Printf("Vuelo borrado (%d row cambiado)\n", rowsAffected)
+	return nil
 }

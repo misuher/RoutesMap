@@ -1,44 +1,24 @@
 package models
 
-import (
-	"errors"
-	"time"
-)
+import "errors"
 
-func isLenEven(t []time.Time) error {
+func isLenEven(t []string) error {
 	if len(t)%2 != 0 {
 		return errors.New("odd number of flight times")
 	}
 	return nil
 }
 
-func createTimesObject(times []time.Time) []timeInLPA {
-	i := 0
-	var result []timeInLPA
-	for index, item := range times {
+func createTimesObject(times []string) []TimeInLPA {
+	var result []TimeInLPA
+	var t TimeInLPA
+	for index, s := range times {
 		if index%2 == 0 {
-			result[i].arrival = item
+			t.Arrival = s
 		} else {
-			result[i].leave = item
-			i++
+			t.Leave = s
+			result = append(result, t)
 		}
 	}
 	return result
-}
-
-type sortTime []time.Time
-
-// Forward request for length
-func (p sortTime) Len() int {
-	return len(p)
-}
-
-// Define compare
-func (p sortTime) Less(i, j int) bool {
-	return p[i].Before(p[j])
-}
-
-// Define swap over an array
-func (p sortTime) Swap(i, j int) {
-	p[i], p[j] = p[j], p[i]
 }
