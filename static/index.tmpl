@@ -1,0 +1,15 @@
+
+{{ template "header" . }}
+	<body>
+		<aside id="sidebar">
+			<div class="hora" id="hora"></div>
+			<div class="lpa-stops" id="lpa-stops">
+				<span>Intervalos de aeronaves en LPA:</span>
+				{{ .Prueba }}
+			</div>
+			<form action="http://localhost:4000/daily" class="dropzone" id="dropzoneid"></form>
+		</aside>
+		<div id="map-wrap">
+			<div id="map-canvas"></div>
+		</div>
+{{ template "footer" . }}

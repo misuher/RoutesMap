@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -15,6 +17,14 @@ import (
 	"github.com/misuher/RoutesMap/parser"
 )
 
+const STATIC_URL string = "/static/"
+const STATIC_ROOT string = "static/"
+
+type Prueba_t struct {
+	Prueba string
+}
+
+//Env wrpa a db interface with the methods to consult it.
 type Env struct {
 	db models.Datastore
 }
@@ -29,10 +39,37 @@ func main() {
 	db.CreateParking()
 	env := &Env{db: db}
 
-	http.Handle("/", http.FileServer(http.Dir("./static/"))) //working page
-	http.HandleFunc("/daily", env.dailyUpload)               //upload pdf table url
-	http.HandleFunc("/getCoords", env.getCoords)             //ajax request to get actual markers position
+	//http.Handle("/", http.FileServer(http.Dir("./static/"))) //working page
+	http.HandleFunc("/", env.googleMap)          //working page
+	http.HandleFunc(STATIC_URL, staticHandler)   //working page
+	http.HandleFunc("/daily", env.dailyUpload)   //upload pdf table url
+	http.HandleFunc("/getCoords", env.getCoords) //ajax request to get actual markers position
 	http.ListenAndServe(":4000", nil)
+}
+
+func (env *Env) googleMap(w http.ResponseWriter, r *http.Request) {
+	p := &Prueba_t{Prueba: "probandooo"}
+	t, err := template.ParseFiles("./static/index.html")
+	if err != nil {
+		log.Println("template parsing error: ", err)
+	}
+	err = t.Execute(w, p)
+	if err != nil {
+		log.Println("template executing error: ", err)
+	}
+}
+
+func staticHandler(w http.ResponseWriter, r *http.Request) {
+	staticFile := r.URL.Path[len(STATIC_URL):]
+	if len(staticFile) != 0 {
+		f, err := http.Dir(STATIC_ROOT).Open(staticFile)
+		if err == nil {
+			content := io.ReadSeeker(f)
+			http.ServeContent(w, r, staticFile, time.Now(), content)
+			return
+		}
+	}
+	http.NotFound(w, r)
 }
 
 func (env *Env) dailyUpload(w http.ResponseWriter, r *http.Request) {
