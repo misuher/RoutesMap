@@ -12,6 +12,7 @@ import (
 
 	"github.com/misuher/RoutesMap/Coordinates"
 	"github.com/misuher/RoutesMap/models"
+	"github.com/misuher/RoutesMap/parser"
 )
 
 type Env struct {
@@ -23,9 +24,10 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
-	models.Create()
-	models.CreateParking()
-	env := &Env{db}
+
+	db.Create()
+	db.CreateParking()
+	env := &Env{db: db}
 
 	http.Handle("/", http.FileServer(http.Dir("./static/"))) //working page
 	http.HandleFunc("/daily", env.dailyUpload)               //upload pdf table url
@@ -47,14 +49,14 @@ func (env *Env) dailyUpload(w http.ResponseWriter, r *http.Request) {
 	//dynamic file name
 	var fileRoute bytes.Buffer
 	fileRoute.WriteString("./uploads/")
-	fileRoute.WriteString(time.Now().Format("01/02/2006 03:04:05"))
+	fileRoute.WriteString(time.Now().Format("2006-01-23 03:04:05"))
 	fileRoute.WriteString(".pdf")
 	err = ioutil.WriteFile(fileRoute.String(), data, 0777)
 	if err != nil {
 		fmt.Println(err)
 	}
 	last.setLastFile(fileRoute.String())
-	pdf2text()
+	env.pdf2text()
 }
 
 func (env *Env) getCoords(w http.ResponseWriter, r *http.Request) {
@@ -81,14 +83,18 @@ func (env *Env) getCoords(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
-func pdf2text() error {
+func (env *Env) pdf2text() error {
 	//convert pdf to text
 	body, err := exec.Command("pdftotext", "-q", "-nopgbrk", "-enc", "UTF-8", "-eol", "unix", last.getLastFile(), "-").Output()
 	if err != nil {
 		return err
 	}
 
-	//TODO: parsear contenido de body y pasarlo a un struct y este a la db
+	err = parser.ParsePDF(body, env.db)
+	if err != nil {
+		return err
+	}
+
 	fmt.Println(body)
 	return nil
 }

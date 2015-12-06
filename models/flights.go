@@ -48,7 +48,8 @@ func (db *DB) Create() {
 	}
 }
 
-func (db *DB) getDaily(date time.Time) ([]*Flight, error) {
+//GetDaily read an entire DAYLY.pdf from the db
+func (db *DB) GetDaily(date time.Time) ([]*Flight, error) {
 	err := db.Ping()
 	if err != nil {
 		return nil, err
@@ -76,7 +77,8 @@ func (db *DB) getDaily(date time.Time) ([]*Flight, error) {
 	return flights, nil
 }
 
-func (db *DB) setDaily(date time.Time, flight Flight) error {
+//SetDaily saves a DAYLY.pdf parsed file into the db
+func (db *DB) SetDaily(date time.Time, flight Flight) error {
 	result, err := db.Exec("INSERT INTO daily VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", date, flight.Avion, flight.Vuelo, flight.DepPlace, flight.DepTime, flight.ArrPlace, flight.ArrTime, flight.Pasajeros, flight.Capitan, flight.PrimerOficial)
 	if err != nil {
 		return err

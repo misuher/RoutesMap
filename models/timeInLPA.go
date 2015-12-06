@@ -26,7 +26,7 @@ func (db *DB) CreateParking() {
 		date DATE NOT NULL,
 		aircraft VARCHAR(255) NOT NULL,
 		arrive VARCHAR(255) NOT NULL,
-		leave VARCHAR(255) NOT NULL,
+		leave VARCHAR(255) NOT NULL
 		);
 	`
 
@@ -91,7 +91,7 @@ func (db *DB) setParking(date time.Time) error {
 
 func (db *DB) filterTimesInLPA(date time.Time) ([]*timesInLPA, error) {
 	//get all the daily flights
-	flights, err := db.getDaily(date)
+	flights, err := db.GetDaily(date)
 	if err != nil {
 		return nil, err
 	}
