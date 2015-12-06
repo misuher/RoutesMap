@@ -3,6 +3,7 @@ package parser
 import (
 	"bufio"
 	"bytes"
+	"log"
 	"strings"
 	"time"
 
@@ -26,13 +27,13 @@ func ParsePDF(body []byte, env models.Datastore) error {
 			f.DepPlace = scanner.Text()
 			scanner.Scan()
 			scanner.Scan()
-			f.DepTime, _ = time.Parse("06:10", scanner.Text())
+			f.DepTime, _ = time.Parse(time.Kitchen, scanner.Text())
 			scanner.Scan()
 			scanner.Scan()
 			f.ArrPlace = scanner.Text()
 			scanner.Scan()
 			scanner.Scan()
-			f.ArrTime, _ = time.Parse("06:10", scanner.Text())
+			f.ArrTime, _ = time.Parse(time.Kitchen, scanner.Text())
 			scanner.Scan()
 			scanner.Scan()
 			f.Pasajeros = scanner.Text()
@@ -43,8 +44,12 @@ func ParsePDF(body []byte, env models.Datastore) error {
 			scanner.Scan()
 			f.PrimerOficial = scanner.Text()
 
+			log.Printf("%v\n", f)
+
 			err := env.SetDaily(time.Now(), f)
+
 			if err != nil {
+				log.Println("SetDaily error")
 				return err
 			}
 		}

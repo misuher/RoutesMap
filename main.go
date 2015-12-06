@@ -39,11 +39,11 @@ func (env *Env) dailyUpload(w http.ResponseWriter, r *http.Request) {
 	file, handler, err := r.FormFile("file")
 	fmt.Println(handler.Filename)
 	if err != nil {
-		fmt.Println(err)
+		http.Error(w, http.StatusText(400), 400)
 	}
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
-		fmt.Println(err)
+		http.Error(w, http.StatusText(400), 400)
 	}
 	//err = ioutil.WriteFile(handler.Filename, data, 0777)
 	//dynamic file name
@@ -53,10 +53,17 @@ func (env *Env) dailyUpload(w http.ResponseWriter, r *http.Request) {
 	fileRoute.WriteString(".pdf")
 	err = ioutil.WriteFile(fileRoute.String(), data, 0777)
 	if err != nil {
-		fmt.Println(err)
+		http.Error(w, http.StatusText(400), 400)
 	}
 	last.setLastFile(fileRoute.String())
-	env.pdf2text()
+	err = env.pdf2text()
+	if err != nil {
+		http.Error(w, http.StatusText(400), 400)
+	}
+
+	//for _, bk := range bks {
+	//	fmt.Fprintf(w, "%s %s  \n", bk.Isbn, bk.Title, bk.Author, bk.Price)
+	//}
 }
 
 func (env *Env) getCoords(w http.ResponseWriter, r *http.Request) {
@@ -94,8 +101,6 @@ func (env *Env) pdf2text() error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(body)
 	return nil
 }
 

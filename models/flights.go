@@ -79,13 +79,21 @@ func (db *DB) GetDaily(date time.Time) ([]*Flight, error) {
 
 //SetDaily saves a DAYLY.pdf parsed file into the db
 func (db *DB) SetDaily(date time.Time, flight Flight) error {
-	result, err := db.Exec("INSERT INTO daily VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", date, flight.Avion, flight.Vuelo, flight.DepPlace, flight.DepTime, flight.ArrPlace, flight.ArrTime, flight.Pasajeros, flight.Capitan, flight.PrimerOficial)
+	err := db.Ping()
 	if err != nil {
+		log.Println("setDaily error: db.Ping")
+		return err
+	}
+
+	result, err := db.Exec("INSERT INTO daily (date, avion,	vuelo,	depplace , deptime , arrplace, arrtime,	pasajeros, capitan,	fo) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", date, flight.Avion, flight.Vuelo, flight.DepPlace, flight.DepTime, flight.ArrPlace, flight.ArrTime, flight.Pasajeros, flight.Capitan, flight.PrimerOficial)
+	if err != nil {
+		log.Println("setDaily error: db.Exec")
 		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		log.Println("setDaily error: RowsAffected")
 		return err
 	}
 	log.Printf("Vuelo %s creado (%d row cambiado)\n", flight.Vuelo, rowsAffected)
