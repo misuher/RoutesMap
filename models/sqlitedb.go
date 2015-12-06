@@ -8,6 +8,14 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+//Parkingstore defines personaliced querys for the models
+type Parkingstore interface {
+	CreateParking()
+	getParking(date time.Time) ([]*timeInLPA, error)
+	setParking(date time.Time) error
+	filterTimesInLPA(date time.Time) ([]*timesInLPA, error)
+}
+
 //Datastore defines personaliced querys for the models
 type Datastore interface {
 	Create()

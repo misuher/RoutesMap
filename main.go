@@ -24,6 +24,7 @@ func main() {
 		log.Panic(err)
 	}
 	models.Create()
+	models.CreateParking()
 	env := &Env{db}
 
 	http.Handle("/", http.FileServer(http.Dir("./static/"))) //working page
