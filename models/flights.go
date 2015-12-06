@@ -99,3 +99,25 @@ func (db *DB) SetDaily(date time.Time, flight Flight) error {
 	log.Printf("Vuelo %s creado (%d row cambiado)\n", flight.Vuelo, rowsAffected)
 	return nil
 }
+
+func (db *DB) DeleteDaily(date time.Time) error {
+	err := db.Ping()
+	if err != nil {
+		log.Println("DeleteDaily error: db.Ping")
+		return err
+	}
+
+	result, err := db.Exec("DELETE FROM daily WHERE date=?", date)
+	if err != nil {
+		log.Println("DeleteDaily error: db.Exec")
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Println("DeleteDaily error: RowsAffected")
+		return err
+	}
+	log.Printf("Vuelo borrado (%d row cambiado)\n", rowsAffected)
+	return nil
+}

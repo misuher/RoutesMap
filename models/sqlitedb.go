@@ -13,11 +13,12 @@ type Datastore interface {
 	Create()
 	GetDaily(date time.Time) ([]*Flight, error)
 	SetDaily(date time.Time, flight Flight) error
+	DeleteDaily(date time.Time) error
 
 	CreateParking()
-	getParking(date time.Time) ([]*timesInLPA, error)
+	GetParking(date time.Time, aircraft string) (TimesInLPA, error)
 	setParking(date time.Time) error
-	filterTimesInLPA(date time.Time) ([]*timesInLPA, error)
+	filterTimesInLPA(date time.Time) ([]*TimesInLPA, error)
 }
 
 //DB is a wrapper por a sql.DB

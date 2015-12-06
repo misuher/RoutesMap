@@ -49,13 +49,13 @@ func (env *Env) dailyUpload(w http.ResponseWriter, r *http.Request) {
 	//dynamic file name
 	var fileRoute bytes.Buffer
 	fileRoute.WriteString("./uploads/")
-	fileRoute.WriteString(time.Now().Format("2006-01-23 03:04:05"))
+	fileRoute.WriteString(time.Now().Format("2006-01-02"))
 	fileRoute.WriteString(".pdf")
 	err = ioutil.WriteFile(fileRoute.String(), data, 0777)
 	if err != nil {
 		http.Error(w, http.StatusText(400), 400)
 	}
-	last.setLastFile(fileRoute.String())
+
 	err = env.pdf2text()
 	if err != nil {
 		http.Error(w, http.StatusText(400), 400)
@@ -71,7 +71,6 @@ func (env *Env) getCoords(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-
 	//TODO: calculate coords dynamically
 	markers := coord.Positions{
 		[]coord.Position{
@@ -80,7 +79,6 @@ func (env *Env) getCoords(w http.ResponseWriter, r *http.Request) {
 			{27.926075, -15.390818},
 			{27.926075, -15.390818},
 		}}
-
 	js, err := json.Marshal(markers)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -91,29 +89,21 @@ func (env *Env) getCoords(w http.ResponseWriter, r *http.Request) {
 }
 
 func (env *Env) pdf2text() error {
+	var fileRoute bytes.Buffer
+	fileRoute.WriteString("./uploads/")
+	fileRoute.WriteString(time.Now().Format("2006-01-02"))
+	fileRoute.WriteString(".pdf")
 	//convert pdf to text
-	body, err := exec.Command("pdftotext", "-q", "-nopgbrk", "-enc", "UTF-8", "-eol", "unix", last.getLastFile(), "-").Output()
+	body, err := exec.Command("pdftotext", "-q", "-nopgbrk", "-enc", "UTF-8", "-eol", "unix", fileRoute.String(), "-").Output()
 	if err != nil {
+		log.Println("No hay daily de hoy")
 		return err
 	}
-
+	date, _ := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
+	err = env.db.DeleteDaily(date)
 	err = parser.ParsePDF(body, env.db)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-
-type lastFile struct {
-	fileName string
-}
-
-func (l *lastFile) setLastFile(filename string) {
-	l.fileName = filename
-}
-
-func (l *lastFile) getLastFile() string {
-	return l.fileName
-}
-
-var last lastFile

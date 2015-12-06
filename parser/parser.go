@@ -46,7 +46,8 @@ func ParsePDF(body []byte, env models.Datastore) error {
 
 			log.Printf("%v\n", f)
 
-			err := env.SetDaily(time.Now(), f)
+			date, _ := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
+			err := env.SetDaily(date, f)
 
 			if err != nil {
 				log.Println("SetDaily error")
