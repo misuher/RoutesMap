@@ -18,9 +18,9 @@
 			<div class="lpa-stops" id="lpa-stops">
 				<span>Intervalos de aeronaves en LPA:</span></br>
 				{{ range . }}
-					<p>{{ .Aircraft}}</p>
+					<h4>{{ .Aircraft}}</h4>
 					{{ range .Times}}
-						<p>{{ .Arrival }} {{ .Leave }}</p>
+						<p>{{ .Arrival }} --{{ .Leave }}</p>
 					{{end}}
 				{{ end }}
 			</div>

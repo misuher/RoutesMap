@@ -140,7 +140,12 @@ func (env *Env) getCoords(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//TODO: calculate coords dynamically
+	coords, err := coord.CalculateCoords()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 	markers := coord.Positions{
+		//coords
 		[]coord.Position{
 			{27.926075, -15.390818},
 			{27.926075, -15.390818},

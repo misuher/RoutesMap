@@ -148,11 +148,14 @@
 	function updateMarker() {
 		$.post("http://localhost:4000/getCoords", {}, function(json){
 			var pos = JSON.parse(json);
-			var LatLng = new google.maps.LatLng(pos.Pos[0].Lat, pos.Pos[0].Lng);
-			GRUmarker.setPosition(LatLng);
-			GRPmarker.setPosition(LatLng);
-			GQFmarker.setPosition(LatLng);
-			LZRmarker.setPosition({lat: 28.040288, lng: -16.572979});
+			var LatLngGRU = new google.maps.LatLng(pos.Pos[0].Lat, pos.Pos[0].Lng);
+			var LatLngGRP = new google.maps.LatLng(pos.Pos[1].Lat, pos.Pos[1].Lng);
+			var LatLngGQF = new google.maps.LatLng(pos.Pos[2].Lat, pos.Pos[2].Lng);
+			var LatLngLZR = new google.maps.LatLng(pos.Pos[3].Lat, pos.Pos[3].Lng);
+			GRUmarker.setPosition(LatLngGRU);
+			GRPmarker.setPosition(LatLngGRP);
+			GQFmarker.setPosition(LatLngGQF);
+			LZRmarker.setPosition(LatLngLZR);
 		});
 
 	/*$.post('/path/to/server/getPosition',{}, function(json) {
