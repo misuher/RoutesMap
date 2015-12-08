@@ -20,6 +20,13 @@ import (
 const STATIC_URL string = "/static/"
 const STATIC_ROOT string = "static/"
 
+var (
+	GRUplane = coord.Plane{coord.DEFAULT, coord.DEFAULT}
+	GRPplane = coord.Plane{coord.DEFAULT, coord.DEFAULT}
+	GQFplane = coord.Plane{coord.DEFAULT, coord.DEFAULT}
+	LZRplane = coord.Plane{coord.DEFAULT, coord.DEFAULT}
+)
+
 //Env warps a db interface with the methods to consult it.
 type Env struct {
 	db models.Datastore
@@ -139,18 +146,24 @@ func (env *Env) getCoords(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	//TODO: calculate coords dynamically
-	coords, err := coord.CalculateCoords()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	GRUpos := GRUplane.CalculateCoords(env.db, "EC-GRU")
+	GRPpos := GRPplane.CalculateCoords(env.db, "EC-GRP")
+	GQFpos := GQFplane.CalculateCoords(env.db, "EC-GQF")
+	LZRpos := LZRplane.CalculateCoords(env.db, "EC-LZR")
+
 	markers := coord.Positions{
 		//coords
 		[]coord.Position{
-			{27.926075, -15.390818},
-			{27.926075, -15.390818},
-			{27.926075, -15.390818},
-			{27.926075, -15.390818},
+			GRUpos,
+			GRPpos,
+			GQFpos,
+			LZRpos,
+			/*
+				{27.926075, -15.390818},
+				{27.926075, -15.390818},
+				{27.926075, -15.390818},
+				{27.926075, -15.390818},
+			*/
 		}}
 	js, err := json.Marshal(markers)
 	if err != nil {

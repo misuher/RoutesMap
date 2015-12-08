@@ -20,7 +20,12 @@ type Flight struct {
 
 //Flights hold all the rows in DAILY.pdf report
 type Flights struct {
-	f []Flight
+	F []Flight
+}
+
+func (f *Flights) AddElement(element Flight) []Flight {
+	f.F = append(f.F, element)
+	return f.F
 }
 
 //Create initialize a table in the db with Flights
